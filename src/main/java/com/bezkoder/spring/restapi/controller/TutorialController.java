@@ -62,7 +62,7 @@ public class TutorialController {
   public ResponseEntity<Tutorial> createTutorial(@RequestBody Tutorial tutorial) {
     try {
       Tutorial _tutorial = tutorialService
-          .save(new Tutorial(tutorial.getTitle(), tutorial.getDescription(), false));
+          .save(new Tutorial(tutorial.getTitle(), tutorial.getDescription(), tutorial.isPublished()));
       return new ResponseEntity<>(_tutorial, HttpStatus.CREATED);
     } catch (Exception e) {
       return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -117,4 +117,16 @@ public class TutorialController {
       return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
+  @PutMapping("/tutorials/{id}/toggle-published")
+  public ResponseEntity<Tutorial> togglePublishedStatus(@PathVariable("id") long id) {
+    Tutorial tutorial = tutorialService.findById(id);
+
+    if (tutorial != null) {
+      tutorial.setPublished(!tutorial.isPublished()); // Toggle published status
+      return new ResponseEntity<>(tutorialService.save(tutorial), HttpStatus.OK);
+    } else {
+      return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    }
+  }
+
 }
