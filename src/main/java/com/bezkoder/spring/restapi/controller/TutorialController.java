@@ -1,14 +1,11 @@
 package com.bezkoder.spring.restapi.controller;
 
-import com.bezkoder.spring.restapi.model.Tutorial;
-import com.bezkoder.spring.restapi.service.TutorialService;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,27 +17,25 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-@CrossOrigin(origins = {"http://localhost:8081"})
-@RestController
-@RequestMapping({"/api"})
-public class TutorialController {
+import com.bezkoder.spring.restapi.model.Tutorial;
+import com.bezkoder.spring.restapi.service.TutorialService;
 
+@CrossOrigin(origins = "http://localhost:8081")
+@RestController
+@RequestMapping("/api")
+public class TutorialController {
   @Autowired
   TutorialService tutorialService;
 
-  @GetMapping({"/tutorials"})
+  @GetMapping("/tutorials")
   public ResponseEntity<List<Tutorial>> getAllTutorials(@RequestParam(required = false) String title) {
     try {
-      List<Tutorial> tutorials = new ArrayList<>();
-      if (title == null) {
-        List<Tutorial> found = this.tutorialService.findAll();
-        Objects.requireNonNull(tutorials);
-        found.forEach(tutorials::add);
-      } else {
-        List<Tutorial> found = this.tutorialService.findByTitleContaining(title);
-        Objects.requireNonNull(tutorials);
-        found.forEach(tutorials::add);
-      }
+      List<Tutorial> tutorials = new ArrayList<Tutorial>();
+
+      if (title == null)
+        tutorialService.findAll().forEach(tutorials::add);
+      else
+        tutorialService.findByTitleContaining(title).forEach(tutorials::add);
 
       if (tutorials.isEmpty()) {
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
@@ -48,13 +43,14 @@ public class TutorialController {
 
       return new ResponseEntity<>(tutorials, HttpStatus.OK);
     } catch (Exception e) {
-      return new ResponseEntity<>((MultiValueMap<String, String>) null, HttpStatus.INTERNAL_SERVER_ERROR);
+      return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
-  @GetMapping({"/tutorials/{id}"})
+  @GetMapping("/tutorials/{id}")
   public ResponseEntity<Tutorial> getTutorialById(@PathVariable("id") long id) {
-    Tutorial tutorial = this.tutorialService.findById(id);
+    Tutorial tutorial = tutorialService.findById(id);
+
     if (tutorial != null) {
       return new ResponseEntity<>(tutorial, HttpStatus.OK);
     } else {
@@ -62,53 +58,57 @@ public class TutorialController {
     }
   }
 
-  @PostMapping({"/tutorials"})
+  @PostMapping("/tutorials")
   public ResponseEntity<Tutorial> createTutorial(@RequestBody Tutorial tutorial) {
     try {
-      Tutorial _tutorial = this.tutorialService.save(new Tutorial(tutorial.getTitle(), tutorial.getDescription(), false));
+      Tutorial _tutorial = tutorialService
+          .save(new Tutorial(tutorial.getTitle(), tutorial.getDescription(), false));
       return new ResponseEntity<>(_tutorial, HttpStatus.CREATED);
     } catch (Exception e) {
-      return new ResponseEntity<>((MultiValueMap<String, String>) null, HttpStatus.INTERNAL_SERVER_ERROR);
+      return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
-  @PutMapping({"/tutorials/{id}"})
+  @PutMapping("/tutorials/{id}")
   public ResponseEntity<Tutorial> updateTutorial(@PathVariable("id") long id, @RequestBody Tutorial tutorial) {
-    Tutorial _tutorial = this.tutorialService.findById(id);
+    Tutorial _tutorial = tutorialService.findById(id);
+
     if (_tutorial != null) {
       _tutorial.setTitle(tutorial.getTitle());
       _tutorial.setDescription(tutorial.getDescription());
       _tutorial.setPublished(tutorial.isPublished());
-      return new ResponseEntity<>(this.tutorialService.save(_tutorial), HttpStatus.OK);
+      return new ResponseEntity<>( tutorialService.save(_tutorial), HttpStatus.OK);
     } else {
       return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
   }
 
-  @DeleteMapping({"/tutorials/{id}"})
+  @DeleteMapping("/tutorials/{id}")
   public ResponseEntity<HttpStatus> deleteTutorial(@PathVariable("id") long id) {
     try {
-      this.tutorialService.deleteById(id);
+      tutorialService.deleteById(id);
       return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     } catch (Exception e) {
       return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
-  @DeleteMapping({"/tutorials"})
+  @DeleteMapping("/tutorials")
   public ResponseEntity<HttpStatus> deleteAllTutorials() {
     try {
-      this.tutorialService.deleteAll();
+      tutorialService.deleteAll();
       return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     } catch (Exception e) {
       return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
     }
+
   }
 
-  @GetMapping({"/tutorials/published"})
+  @GetMapping("/tutorials/published")
   public ResponseEntity<List<Tutorial>> findByPublished() {
     try {
-      List<Tutorial> tutorials = this.tutorialService.findByPublished(true);
+      List<Tutorial> tutorials =  tutorialService.findByPublished(true);
+
       if (tutorials.isEmpty()) {
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
       }
@@ -117,16 +117,26 @@ public class TutorialController {
       return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
+    // --------- New ping and version endpoints ------------
 
-  // --------- New ping and version endpoints ------------
+    @GetMapping("/ping")
+    public ResponseEntity<String> ping() {
+        return ResponseEntity.ok("Pong! API is running.");
+    }
 
-  @GetMapping("/ping")
-  public ResponseEntity<String> ping() {
-    return ResponseEntity.ok("Pong! API is running.");
-  }
+    @GetMapping("/version")
+    public ResponseEntity<String> version() {
+        return ResponseEntity.ok("Release 2025-R1");
+    }
+    @PutMapping("/tutorials/{id}/toggle-published")
+    public ResponseEntity<Tutorial> togglePublishedStatus(@PathVariable("id") long id) {
+        Tutorial tutorial = tutorialService.findById(id);
 
-  @GetMapping("/version")
-  public ResponseEntity<String> version() {
-    return ResponseEntity.ok("Release 2025-R1");
-  }
+        if (tutorial != null) {
+            tutorial.setPublished(!tutorial.isPublished()); // Toggle published status
+            return new ResponseEntity<>(tutorialService.save(tutorial), HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+    }
 }
