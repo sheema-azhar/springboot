@@ -10,8 +10,10 @@ New feature to fetch tutorials with `published = true`
 
 ### Changed
 Updated `TutorialController.java` to include new GET logic
+Updated `TutorialController.java` to include filtering logic for published tutorials
 Applied feedback from code review
 
 ### Contributors
 Abdul Moiz
+Manal Shahid
 
