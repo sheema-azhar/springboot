@@ -18,8 +18,16 @@ public class TutorialService {
   }
 
   public List<Tutorial> findByTitleContaining(String title) {
-    return tutorials.stream().filter(tutorial -> tutorial.getTitle().contains(title)).toList();
+    if (title == null || title.isEmpty()) {
+      return tutorials; // return all if no title is provided
+    }
+    String lowerCaseTitle = title.toLowerCase();
+    return tutorials.stream()
+            .filter(tutorial -> tutorial.getTitle() != null &&
+                    tutorial.getTitle().toLowerCase().contains(lowerCaseTitle))
+            .toList();
   }
+
 
   public Tutorial findById(long id) {
     return tutorials.stream().filter(tutorial -> id == tutorial.getId()).findAny().orElse(null);
